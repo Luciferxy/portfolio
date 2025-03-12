@@ -2,12 +2,8 @@
 
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useRef, useState, useEffect } from 'react';
-import { Mesh, Vector3, Group } from 'three';
+import { Mesh, Vector3 } from 'three';
 import { Environment, Float, MeshDistortMaterial, GradientTexture } from '@react-three/drei';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-let isGsapInitialized = false;
 
 interface MousePosition {
   x: number;
@@ -18,103 +14,47 @@ interface FloatingParticlesProps {
   mouse: React.MutableRefObject<MousePosition>;
 }
 
-interface ScrollTriggerState {
-  progress: number;
-}
-
 function FloatingParticles({ mouse }: FloatingParticlesProps) {
   const particles = useRef<Mesh[]>([]);
   const count = 50;
   const [hovered, setHovered] = useState<number | null>(null);
-  const groupRef = useRef<Group>(null);
 
-  useEffect(() => {
-    if (!groupRef.current) return;
-
-    // GSAP animation for the entire particle group
-    gsap.to(groupRef.current.rotation, {
-      y: Math.PI * 2,
-      duration: 20,
-      repeat: -1,
-      ease: "none"
-    });
-
-    // Scroll-triggered animation
-    ScrollTrigger.create({
-      trigger: "body",
-      start: "top top",
-      end: "bottom bottom",
-      onUpdate: (self: ScrollTriggerState) => {
-        if (groupRef.current) {
-          groupRef.current.position.y = self.progress * 2 - 1;
-        }
-      }
-    });
-  }, []);
-
-  useFrame((state: { clock: { getElapsedTime: () => number } }) => {
+  useFrame((state) => {
     for (let i = 0; i < particles.current.length; i++) {
       const particle = particles.current[i];
       const time = state.clock.getElapsedTime();
       
-      // Enhanced floating animation with multiple sine waves
+      // Basic floating animation
       particle.position.y += Math.sin(time + i) * 0.002;
-      particle.position.x += Math.cos(time * 0.5 + i) * 0.001;
-      particle.position.z += Math.sin(time * 0.3 + i) * 0.001;
       
-      // Mouse interaction with smoother transitions
+      // Mouse interaction
       if (mouse.current) {
         const distance = particle.position.distanceTo(new Vector3(mouse.current.x * 5, mouse.current.y * 5, 0));
         if (distance < 2) {
-          gsap.to(particle.position, {
-            x: particle.position.x + (mouse.current.x * 5 - particle.position.x) * 0.1,
-            y: particle.position.y + (mouse.current.y * 5 - particle.position.y) * 0.1,
-            duration: 0.5,
-            ease: "power2.out"
-          });
+          particle.position.x += (mouse.current.x * 5 - particle.position.x) * 0.02;
+          particle.position.y += (mouse.current.y * 5 - particle.position.y) * 0.02;
         }
       }
       
-      // Dynamic rotation based on distance from center
-      const distanceFromCenter = particle.position.length();
-      particle.rotation.x += 0.001 * (1 + distanceFromCenter * 0.1);
-      particle.rotation.y += 0.001 * (1 + distanceFromCenter * 0.1);
+      // Rotation animation
+      particle.rotation.x += 0.001;
+      particle.rotation.y += 0.001;
       
-      // Scale animation with GSAP
+      // Scale animation when hovered
       if (hovered === i) {
-        gsap.to(particle.scale, {
-          x: 0.2,
-          y: 0.2,
-          z: 0.2,
-          duration: 0.3,
-          ease: "back.out(1.7)"
-        });
+        particle.scale.lerp(new Vector3(0.2, 0.2, 0.2), 0.1);
       } else {
-        gsap.to(particle.scale, {
-          x: 0.1,
-          y: 0.1,
-          z: 0.1,
-          duration: 0.3,
-          ease: "power2.out"
-        });
+        particle.scale.lerp(new Vector3(0.1, 0.1, 0.1), 0.1);
       }
     }
   });
 
   return (
-    <group ref={groupRef}>
+    <>
       {Array.from({ length: count }).map((_, i) => (
-        <Float 
-          key={i} 
-          speed={1.5} 
-          rotationIntensity={1} 
-          floatIntensity={2}
-          floatingRange={[-0.5, 0.5]}
-        >
+        <Float key={i} speed={1.5} rotationIntensity={1} floatIntensity={2}>
           <mesh
-            ref={(el) => {
-              if (el) particles.current[i] = el;
-            }}
+            ref={(el) => el && (particles.current[i] = el)}
             position={[
               Math.random() * 10 - 5,
               Math.random() * 10 - 5,
@@ -147,40 +87,18 @@ function FloatingParticles({ mouse }: FloatingParticlesProps) {
       <ambientLight intensity={0.2} />
       <pointLight position={[10, 10, 10]} intensity={0.5} />
       <spotLight position={[-10, -10, -10]} intensity={0.2} />
-    </group>
+    </>
   );
 }
 
 function MovingGradient() {
   const mesh = useRef<Mesh>(null);
   
-  useEffect(() => {
-    if (!mesh.current) return;
-
-    // GSAP animation for gradient rotation
-    gsap.to(mesh.current.rotation, {
-      z: Math.PI * 2,
-      duration: 20,
-      repeat: -1,
-      ease: "none"
-    });
-
-    // Scroll-triggered scale animation
-    ScrollTrigger.create({
-      trigger: "body",
-      start: "top top",
-      end: "bottom bottom",
-      onUpdate: (self: ScrollTriggerState) => {
-        if (mesh.current) {
-          gsap.to(mesh.current.scale, {
-            x: 20 + self.progress * 5,
-            y: 20 + self.progress * 5,
-            duration: 0.5
-          });
-        }
-      }
-    });
-  }, []);
+  useFrame(({ clock }) => {
+    if (mesh.current) {
+      mesh.current.rotation.z = clock.getElapsedTime() * 0.1;
+    }
+  });
 
   return (
     <mesh ref={mesh} position={[0, 0, -5]} scale={20}>
@@ -198,44 +116,18 @@ function MovingGradient() {
 
 function Scene() {
   const mouse = useRef<MousePosition>({ x: 0, y: 0 });
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
-    if (!isGsapInitialized) {
-      gsap.registerPlugin(ScrollTrigger);
-      isGsapInitialized = true;
-    }
-
-    // Set initial dimensions
-    setDimensions({
-      width: window.innerWidth,
-      height: window.innerHeight
-    });
-
     const handleMouseMove = (event: MouseEvent) => {
-      gsap.to(mouse.current, {
-        x: (event.clientX / dimensions.width) * 2 - 1,
-        y: -(event.clientY / dimensions.height) * 2 + 1,
-        duration: 0.5,
-        ease: "power2.out"
-      });
-    };
-
-    const handleResize = () => {
-      setDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
+      mouse.current = {
+        x: (event.clientX / window.innerWidth) * 2 - 1,
+        y: -(event.clientY / window.innerHeight) * 2 + 1
+      };
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [dimensions.width, dimensions.height]);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   return (
     <>
@@ -246,16 +138,6 @@ function Scene() {
 }
 
 export default function ProjectBackground() {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return <div className="fixed inset-0 -z-10 bg-gray-900 opacity-50" />;
-  }
-
   return (
     <div className="fixed inset-0 -z-10 opacity-50">
       <Canvas

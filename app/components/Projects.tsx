@@ -64,28 +64,8 @@ const projects = [
 
 const Projects = () => {
   const [activeVideo, setActiveVideo] = useState<number | null>(null);
-  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const sectionRef = useRef<HTMLElement>(null);
   const projectRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  useEffect(() => {
-    // Set initial window size
-    setWindowSize({
-      width: window.innerWidth,
-      height: window.innerHeight
-    });
-
-    // Handle window resize
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   useEffect(() => {
     if (!sectionRef.current) return;
@@ -172,20 +152,6 @@ const Projects = () => {
                 className="bg-gray-800/80 backdrop-blur-sm rounded-xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 project-card"
                 onMouseEnter={() => setActiveVideo(index)}
                 onMouseLeave={() => setActiveVideo(null)}
-                initial={{
-                  opacity: 0,
-                  x: index % 2 === 0 ? -50 : 50,
-                  y: 20
-                }}
-                animate={{
-                  opacity: 1,
-                  x: 0,
-                  y: 0
-                }}
-                transition={{
-                  duration: 0.5,
-                  delay: index * 0.1
-                }}
               >
                 <div className="relative aspect-video overflow-hidden bg-gray-900">
                   {project.mediaType === 'video' ? (
