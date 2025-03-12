@@ -198,6 +198,7 @@ function MovingGradient() {
 
 function Scene() {
   const mouse = useRef<MousePosition>({ x: 0, y: 0 });
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     if (!isGsapInitialized) {
@@ -205,18 +206,36 @@ function Scene() {
       isGsapInitialized = true;
     }
 
+    // Set initial dimensions
+    setDimensions({
+      width: window.innerWidth,
+      height: window.innerHeight
+    });
+
     const handleMouseMove = (event: MouseEvent) => {
       gsap.to(mouse.current, {
-        x: (event.clientX / window.innerWidth) * 2 - 1,
-        y: -(event.clientY / window.innerHeight) * 2 + 1,
+        x: (event.clientX / dimensions.width) * 2 - 1,
+        y: -(event.clientY / dimensions.height) * 2 + 1,
         duration: 0.5,
         ease: "power2.out"
       });
     };
 
+    const handleResize = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [dimensions.width, dimensions.height]);
 
   return (
     <>
