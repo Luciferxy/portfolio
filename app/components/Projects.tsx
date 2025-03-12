@@ -20,8 +20,8 @@ const projects = [
     description: 'A pixel-perfect recreation of the Apple iPhone website featuring smooth animations, 3D models, and responsive design.',
     technologies: ['React', 'Tailwind CSS', 'Vite', 'GSAP', 'Three.js'],
     category: 'Web Development',
-    mediaType: 'video',
-    videoUrl: '/videos/iphone project.mp4',
+    mediaType: 'image',
+    image: '/videos/Screenshot 2025-03-12 151801.png',
     githubLink: 'https://github.com/Luciferxy/iPHONE'
   },
   {
